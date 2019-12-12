@@ -1,7 +1,7 @@
 node('smartd-jnlp') {
-    stage('Prepare') {
-        echo "1.Prepare Stage"
-        checkout scm
+    stage('Clone') {
+        echo "1 clone stage..."
+        git url: "https://github.com/sdxy36/jenkins-demo.git"
         script {
             build_tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
             if (env.BRANCH_NAME != 'master') {
@@ -9,27 +9,29 @@ node('smartd-jnlp') {
             }
         }
     }
+
     stage('Test') {
-      echo "2.Test Stage"
+        echo "2 test stage..."
     }
+
     stage('Build') {
-        echo "3.Build Docker Image Stage"
-        sh "docker build -t cnych/jenkins-demo:${build_tag} ."
-    }
-    stage('Push') {
-        echo "4.Push Docker Image Stage"
-        withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-            sh "docker login -u ${dockerHubUser} -p ${dockerHubPassword}"
-            sh "docker push cnych/jenkins-demo:${build_tag}"
+        echo "3 build stage..."
+        withDockerRegistry(credentialsId: 'biao', url: 'https://index.docker.io/v1/') {
+            def image = docker.build("sdxy36/jenkins-demo:${build_tag}")
+            image.push()
         }
     }
+
     stage('Deploy') {
-        echo "5. Deploy Stage"
+        echo "4 deploy stage..."
         if (env.BRANCH_NAME == 'master') {
             input "确认要部署线上环境吗？"
         }
-        sh "sed -i 's/<BUILD_TAG>/${build_tag}/' k8s.yaml"
+        sh "sed -i 's/<BUILD_TAG>/${build_tag}/g' k8s.yaml"
         sh "sed -i 's/<BRANCH_NAME>/${env.BRANCH_NAME}/' k8s.yaml"
+
+        echo "This is a deploy step to ${userInput} env"
         sh "kubectl apply -f k8s.yaml --record"
     }
+ 
 }
