@@ -30,7 +30,6 @@ node('smartd-jnlp') {
         sh "sed -i 's/<BUILD_TAG>/${build_tag}/g' k8s.yaml"
         sh "sed -i 's/<BRANCH_NAME>/${env.BRANCH_NAME}/' k8s.yaml"
 
-        echo "This is a deploy step to ${userInput} env"
         sh "kubectl apply -f k8s.yaml --record"
     }
  
