@@ -1,4 +1,4 @@
-node('smartd-jnlp') {
+node('test-jnlp') {
     stage('Clone') {
         echo "1 clone stage..."
         checkout scm
